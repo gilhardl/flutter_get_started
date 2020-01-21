@@ -12,13 +12,17 @@ class MyApp extends StatelessWidget {
 
 class RandomWordsState extends State<RandomWords> {
   final List<WordPair> _suggestions = <WordPair>[];
+  final Set<WordPair> _saved = Set<WordPair>();
   final TextStyle _biggerFont = TextStyle(fontSize: 18);
 
   @override
-  Widget build(BuildContext contexte) {
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Startup name generator'),
+        actions: <Widget>[
+          IconButton(icon: Icon(Icons.list), onPressed: _pushSaved,)
+        ],
       ),
       body: _buildSuggestions(),
     );
@@ -33,7 +37,7 @@ class RandomWordsState extends State<RandomWords> {
       // the word pairing. For odd rows, the function adds a
       // Divider widget to visually separate the entries. Note that
       // the divider may be difficult to see on smaller devices.
-      itemBuilder: (BuildContext _contexte, int i) {
+      itemBuilder: (BuildContext _context, int i) {
         // Add a one-pixel-high divider widget before each row
         // in the ListView.
         if (i.isOdd) {
@@ -59,11 +63,56 @@ class RandomWordsState extends State<RandomWords> {
   }
 
   Widget _buildRow(WordPair word) {
+    final bool alreadySaved = _saved.contains(word);
     return ListTile(
       title: Text(
         word.asPascalCase,
         style: _biggerFont,
       ),
+      trailing: Icon(
+        alreadySaved ? Icons.favorite : Icons.favorite_border,
+        color: alreadySaved ? Colors.red : null,
+      ),
+      onTap: () {
+        setState(() {
+          if (alreadySaved) {
+            this._saved.remove(word);          
+          } else {
+            this._saved.add(word);
+          }
+        });
+      },
+    );
+  }
+
+  void _pushSaved() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) {
+          final Iterable<ListTile> tiles = _saved.map(
+            (WordPair word) {
+              return ListTile(
+                title: Text(
+                  word.asPascalCase,
+                  style: _biggerFont,
+                )
+              );
+            }
+          );
+
+          final List<Widget> divided = ListTile.divideTiles(
+            context: context,
+            tiles: tiles
+          ).toList();
+
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Saved suggestions'),
+            ),
+            body: ListView(children: divided)
+          );
+        }
+      )
     );
   }
 }
